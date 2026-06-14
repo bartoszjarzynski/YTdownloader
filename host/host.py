@@ -156,6 +156,19 @@ def download(url):
             return
         launcher = [py, ytdlp]
 
+    # Szukaj node.exe (wymagany od yt-dlp 2026.x do rozwiazywania podpisow
+    # YouTube oraz do generowania PO tokenow przez wtyczke bgutil).
+    node_exe = os.path.join(HERE, "node", "node.exe")
+    if not os.path.exists(node_exe):
+        from shutil import which
+        node_exe = which("node") or ""
+
+    # Wtyczka bgutil (PO token) spakowana w .zip — yt-dlp.exe wczytuje wtyczki
+    # tylko z pliku .zip lezacego w katalogu wskazanym przez --plugin-dirs.
+    plugin_dir = os.path.join(HERE, "ytdlp-plugins")
+    # Skrypt generujacy PO token (tryb "script" providera bgutil).
+    pot_script = os.path.join(HERE, "bgutil-provider", "server", "build", "generate_once.js")
+
     cmd = [
         *launcher,
         "--no-playlist",
@@ -163,8 +176,12 @@ def download(url):
         "--no-color",
         "--no-part",
         "--restrict-filenames",
+        # YouTube blokuje (403) zakresy IPv6 wielu dostawcow -> wymus IPv4
+        "--force-ipv4",
         # pobieranie kilku fragmentow rownolegle -> omija dlawienie YouTube
         "--concurrent-fragments", "5",
+        # klient web_safari: jego formaty dostaja PO token (omija 403)
+        "--extractor-args", "youtube:player_client=web_safari",
         # limit jakosci do 720p: mniejszy plik = szybsze pobieranie (wystarcza do karaoke)
         "-f", "bv*[height<=720][ext=mp4]+ba[ext=m4a]/b[height<=720][ext=mp4]/"
               "bv*[height<=720]+ba/b[height<=720]/b",
@@ -172,11 +189,25 @@ def download(url):
         "-o", out_tmpl,
         "--print", "after_move:filepath",
     ]
+    if node_exe and os.path.exists(node_exe):
+        cmd += ["--js-runtimes", f"node:{node_exe}"]
+        log(f"Uzywam Node.js: {node_exe}")
+    if os.path.isdir(plugin_dir):
+        cmd += ["--plugin-dirs", plugin_dir]
+    if os.path.exists(pot_script):
+        cmd += ["--extractor-args", f"youtubepot-bgutilscript:script_path={pot_script}"]
+        log(f"PO token przez skrypt: {pot_script}")
     if ffmpeg:
         cmd += ["--ffmpeg-location", os.path.dirname(ffmpeg)]
     cmd.append(url)
 
     log(f"Komenda: {' '.join(cmd)}")
+
+    # Provider PO tokenu uruchamia "node" — upewnij sie, ze nasz Node jest w PATH
+    # (Chrome startuje pomocnika z ubogim PATH, w ktorym moze go nie byc).
+    env = os.environ.copy()
+    if node_exe and os.path.exists(node_exe):
+        env["PATH"] = os.path.dirname(node_exe) + os.pathsep + env.get("PATH", "")
 
     try:
         proc = subprocess.Popen(
@@ -187,6 +218,7 @@ def download(url):
             text=True,
             encoding="utf-8",
             errors="replace",
+            env=env,
         )
     except Exception as e:
         send_message({"status": "error", "message": f"Nie udalo sie uruchomic yt-dlp: {e}"})

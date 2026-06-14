@@ -3,3 +3,4 @@ __pycache__/
 host/host.log
 host/config.json
 .DS_Store
+.claude/

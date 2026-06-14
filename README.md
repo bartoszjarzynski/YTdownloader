@@ -95,6 +95,13 @@ wysokości, by pobierać najwyższą dostępną jakość.
   samo narzędzie. macOS:
   `~/Library/Application\ Support/TataYTDownloader/yt-dlp -U`
   Windows: `%LOCALAPPDATA%\TataYTDownloader\yt-dlp.exe -U`
+- **„HTTP Error 403: Forbidden"** — YouTube wymaga teraz „PO tokenów" i blokuje
+  pobieranie bez nich (oraz dławi część zakresów IPv6). Pomocnik radzi sobie z tym
+  automatycznie: wymusza IPv4 (`--force-ipv4`), używa lokalnego **Node.js** do
+  rozwiązywania podpisów oraz wtyczki **bgutil** (folder `ytdlp-plugins` +
+  `bgutil-provider`) do generowania tokenów. Wszystko to instaluje instalator —
+  jeśli widzisz ten błąd, uruchom go ponownie. W logu (`host.log`) szukaj wpisu
+  „PO token przez skrypt"; jego brak oznacza, że komponenty się nie doinstalowały.
 - **Brak ffmpeg** — instalator próbuje go pobrać automatycznie. Jeśli się nie
   uda, na macOS zainstaluj `brew install ffmpeg`, na Windows pobierz ffmpeg i
   wrzuć `ffmpeg.exe` do folderu instalacyjnego.

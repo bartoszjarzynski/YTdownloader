@@ -65,6 +65,70 @@ else {
   Remove-Item -Recurse -Force $ex -ErrorAction SilentlyContinue
 }
 
+# --- Node.js (wymagany przez yt-dlp: rozwiazywanie podpisow + PO token) ---
+# Kopiujemy CALA dystrybucje (z npm) - npm jest potrzebny do zbudowania
+# providera PO tokenow ponizej.
+Say "Sprawdzam Node.js..."
+$nodeDir = Join-Path $InstallDir "node"
+$nodeExe = Join-Path $nodeDir "node.exe"
+if (Test-Path $nodeExe) { Ok "Node.js juz jest" }
+else {
+  $tmp = Join-Path $env:TEMP "tata_node.zip"
+  $ex  = Join-Path $env:TEMP "tata_node"
+  Invoke-WebRequest -Uri "https://nodejs.org/dist/v22.16.0/node-v22.16.0-win-x64.zip" -OutFile $tmp -UseBasicParsing
+  if (Test-Path $ex) { Remove-Item -Recurse -Force $ex }
+  Expand-Archive -Path $tmp -DestinationPath $ex -Force
+  $inner = Get-ChildItem -Path $ex -Directory | Select-Object -First 1
+  if ($inner) {
+    New-Item -ItemType Directory -Force -Path $nodeDir | Out-Null
+    Copy-Item (Join-Path $inner.FullName "*") $nodeDir -Recurse -Force
+    Ok "Node.js zainstalowany"
+  } else { Warn "Nie udalo sie wypakowac Node.js." }
+  Remove-Item -Force $tmp -ErrorAction SilentlyContinue
+  Remove-Item -Recurse -Force $ex -ErrorAction SilentlyContinue
+}
+
+# --- Wtyczka bgutil (PO token) + provider ---
+# YouTube wymaga "PO tokenow" do pobrania danych wideo (inaczej HTTP 403).
+# Wtyczka bgutil generuje je lokalnie przez Node. yt-dlp.exe wczytuje wtyczki
+# tylko z pliku .zip lezacego w katalogu przekazanym przez --plugin-dirs.
+$BgVer = "1.3.1"
+Say "Instaluje wtyczke PO token (bgutil $BgVer)..."
+$plugDir = Join-Path $InstallDir "ytdlp-plugins"
+$plugZip = Join-Path $plugDir "bgutil-pot.zip"
+if (Test-Path $plugZip) { Ok "Wtyczka PO token juz jest" }
+else {
+  New-Item -ItemType Directory -Force -Path $plugDir | Out-Null
+  Invoke-WebRequest -Uri "https://github.com/Brainicism/bgutil-ytdlp-pot-provider/releases/download/$BgVer/bgutil-ytdlp-pot-provider.zip" -OutFile $plugZip -UseBasicParsing
+  Ok "Wtyczka PO token zainstalowana"
+}
+
+# Provider (skrypt generujacy token) - pobieramy zrodla i budujemy przez npm.
+$provider = Join-Path $InstallDir "bgutil-provider"
+$potScript = Join-Path $provider "server\build\generate_once.js"
+if (Test-Path $potScript) { Ok "Provider PO token juz zbudowany" }
+else {
+  Say "Buduje provider PO token (chwile to potrwa)..."
+  $tmp = Join-Path $env:TEMP "tata_bgutil.zip"
+  $ex  = Join-Path $env:TEMP "tata_bgutil"
+  Invoke-WebRequest -Uri "https://github.com/Brainicism/bgutil-ytdlp-pot-provider/archive/refs/tags/$BgVer.zip" -OutFile $tmp -UseBasicParsing
+  if (Test-Path $ex) { Remove-Item -Recurse -Force $ex }
+  Expand-Archive -Path $tmp -DestinationPath $ex -Force
+  $root = Get-ChildItem -Path $ex -Directory | Select-Object -First 1
+  if (Test-Path $provider) { Remove-Item -Recurse -Force $provider }
+  Copy-Item $root.FullName $provider -Recurse -Force
+  $server = Join-Path $provider "server"
+  Push-Location $server
+  $env:PATH = "$nodeDir;$env:PATH"
+  & (Join-Path $nodeDir "npm.cmd") ci 2>&1 | Out-Null
+  & (Join-Path $nodeDir "npx.cmd") tsc 2>&1 | Out-Null
+  Pop-Location
+  if (Test-Path $potScript) { Ok "Provider PO token zbudowany" }
+  else { Warn "Nie udalo sie zbudowac providera PO token." }
+  Remove-Item -Force $tmp -ErrorAction SilentlyContinue
+  Remove-Item -Recurse -Force $ex -ErrorAction SilentlyContinue
+}
+
 # --- manifest Native Messaging ---
 Say "Rejestruje pomocnika w przegladarce..."
 $manifest = @{
