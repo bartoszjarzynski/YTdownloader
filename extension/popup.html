@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <style>
+    body { width: 260px; margin: 0; font-family: Arial, sans-serif; color: #222; }
+    .top { background: #c62828; color: #fff; padding: 14px 16px; }
+    .top h1 { font-size: 16px; margin: 0; }
+    .body { padding: 14px 16px; font-size: 13px; line-height: 1.4; }
+    button {
+      width: 100%; padding: 12px; font-size: 15px; font-weight: 700;
+      color: #fff; background: #c62828; border: none; border-radius: 10px;
+      cursor: pointer; margin-top: 6px;
+    }
+    button:hover { background: #b71c1c; }
+    p { margin: 8px 0; color: #555; }
+    .hint { font-size: 12px; color: #888; }
+  </style>
+</head>
+<body>
+  <div class="top"><h1>YouTube Downloader MP4</h1></div>
+  <div class="body">
+    <button id="dl">⬇ Pobierz film z tej karty</button>
+    <p id="status"></p>
+    <p class="hint">
+      Wejdz na strone filmu na YouTube i kliknij przycisk powyzej,
+      albo przycisk ⬇ na pasku odtwarzacza. Plik trafi do folderu
+      <b>Pobrane</b>.
+    </p>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

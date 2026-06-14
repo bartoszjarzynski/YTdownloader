@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+host/host.log
+host/config.json
+.DS_Store

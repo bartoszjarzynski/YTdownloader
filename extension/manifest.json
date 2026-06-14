@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Downloader MP4",
+  "version": "1.0.0",
+  "description": "Pobiera film z YouTube jako plik MP4 do folderu Pobrane jednym kliknieciem.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwLjMP+0qTqGVP8A0jiXWIM6tGUi2scxrWaYQ+hMJ04OC7q2HOSLeCYju/Ue4OZke1VUR2TGbdTNe/jAyGwOH2w8V8XXJja8QWZXRU8WwKvza87jg7IJtD/J68JGd3e8rRbwqYMGvdT9b9DTxPfVY9sbuSn5TBs6F0dEKElFdtXTBVKjnGHmnqaeN3MO5YRDSawmnYmYskOLr9II6NYGPR73qW7X61F7YuDf6Onz29PEppvTDetUd3JVjXvUhZ7UGHGMpuxomCu/Qf2h/Ftn0xXUh378kGoE0hfObRR2g/JPvxCj+5zMka5RCkcKZiWDL7cxHHt+Va7SCiH2oVgnFEQIDAQAB",
+  "permissions": ["nativeMessaging", "tabs"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.youtube.com/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "YouTube Downloader MP4"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

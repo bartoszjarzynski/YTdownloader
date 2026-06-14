@@ -1,0 +1,48 @@
+/* Przycisk w pasku kontrolek YouTube */
+.tata-yt-btn {
+  width: 40px;
+  height: 100%;
+  vertical-align: top;
+  opacity: 0.92;
+  transition: opacity 0.1s;
+}
+.tata-yt-btn:hover { opacity: 1; }
+.tata-yt-btn svg { width: 100%; height: 100%; }
+
+/* Powiadomienie / pasek postepu */
+#tata-yt-toast {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 2147483647;
+  min-width: 260px;
+  max-width: 360px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-family: "Roboto", Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.35;
+  color: #fff;
+  background: #222;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+  display: none;
+}
+#tata-yt-toast.tata-info  { background: #1565c0; }
+#tata-yt-toast.tata-done  { background: #2e7d32; }
+#tata-yt-toast.tata-error { background: #c62828; }
+
+.tata-toast-text b { font-weight: 700; }
+
+.tata-bar {
+  margin-top: 10px;
+  height: 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.25);
+  overflow: hidden;
+}
+.tata-bar-fill {
+  height: 100%;
+  background: #fff;
+  border-radius: 6px;
+  transition: width 0.2s ease;
+}
