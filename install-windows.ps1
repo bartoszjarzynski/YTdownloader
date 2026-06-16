@@ -105,8 +105,9 @@ else {
 
 # Provider (skrypt generujacy token) - pobieramy zrodla i budujemy przez npm.
 $provider = Join-Path $InstallDir "bgutil-provider"
-$potScript = Join-Path $provider "server\build\generate_once.js"
-if (Test-Path $potScript) { Ok "Provider PO token juz zbudowany" }
+# Pomocnik uruchamia serwer z build\main.js (tryb HTTP) — to nasz wyznacznik builda.
+$potServer = Join-Path $provider "server\build\main.js"
+if (Test-Path $potServer) { Ok "Provider PO token juz zbudowany" }
 else {
   Say "Buduje provider PO token (chwile to potrwa)..."
   $tmp = Join-Path $env:TEMP "tata_bgutil.zip"
@@ -123,7 +124,7 @@ else {
   & (Join-Path $nodeDir "npm.cmd") ci 2>&1 | Out-Null
   & (Join-Path $nodeDir "npx.cmd") tsc 2>&1 | Out-Null
   Pop-Location
-  if (Test-Path $potScript) { Ok "Provider PO token zbudowany" }
+  if (Test-Path $potServer) { Ok "Provider PO token zbudowany" }
   else { Warn "Nie udalo sie zbudowac providera PO token." }
   Remove-Item -Force $tmp -ErrorAction SilentlyContinue
   Remove-Item -Recurse -Force $ex -ErrorAction SilentlyContinue

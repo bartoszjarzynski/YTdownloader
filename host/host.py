@@ -17,10 +17,14 @@ import struct
 import subprocess
 import sys
 import time
+import urllib.request
 
 # Katalog, w ktorym lezy ten skrypt — obok niego instalator kladzie yt-dlp i ffmpeg.
 HERE = os.path.dirname(os.path.abspath(__file__))
 LOG_PATH = os.path.join(HERE, "host.log")
+
+# Lokalny serwer bgutil generujacy PO tokeny (omija blokade 403 YouTube).
+POT_SERVER_URL = "http://127.0.0.1:4416"
 
 IS_WINDOWS = sys.platform.startswith("win")
 # Na macOS/Linux uzywamy lekkiej wersji yt-dlp w czystym Pythonie (zipapp),
@@ -133,6 +137,63 @@ def find_python():
     return None
 
 
+# --- Serwer PO token (bgutil) ---
+
+def pot_server_alive():
+    """Czy lokalny serwer bgutil odpowiada na /ping?"""
+    try:
+        with urllib.request.urlopen(POT_SERVER_URL + "/ping", timeout=3) as r:
+            return r.status == 200
+    except Exception:
+        return False
+
+
+def ensure_pot_server(node_exe):
+    """Uruchamia serwer bgutil (PO token) w tle, jesli jeszcze nie dziala.
+
+    Tryb serwera jest duzo pewniejszy niz tryb "script": serwer startuje raz i
+    zostaje "cieply", wiec kolejne pobrania nie placa za zimny start Node (ktory
+    na wolniejszych komputerach potrafil przekroczyc sztywny limit 15 s wtyczki).
+    Pierwszy start moze potrwac (skan antywirusa), wiec czekamy nawet ~60 s.
+    """
+    server_dir = os.path.join(HERE, "bgutil-provider", "server")
+    main_js = os.path.join(server_dir, "build", "main.js")
+    if not (node_exe and os.path.exists(node_exe) and os.path.exists(main_js)):
+        return False
+    if pot_server_alive():
+        return True
+
+    log("Uruchamiam serwer PO token (bgutil)...")
+    env = os.environ.copy()
+    env["PATH"] = os.path.dirname(node_exe) + os.pathsep + env.get("PATH", "")
+    popen_kwargs = dict(
+        cwd=server_dir,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        env=env,
+    )
+    if IS_WINDOWS:
+        # DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW —
+        # serwer ma przezyc zakonczenie pomocnika i nie pokazywac okna konsoli.
+        popen_kwargs["creationflags"] = 0x00000008 | 0x00000200 | 0x08000000
+    else:
+        popen_kwargs["start_new_session"] = True
+    try:
+        subprocess.Popen([node_exe, main_js], **popen_kwargs)
+    except Exception as e:
+        log(f"Nie udalo sie uruchomic serwera PO token: {e}")
+        return False
+
+    for _ in range(60):
+        if pot_server_alive():
+            log("Serwer PO token gotowy.")
+            return True
+        time.sleep(1)
+    log("Serwer PO token nie wstal w 60 s — probuje pobierac mimo to.")
+    return False
+
+
 # --- Pobieranie ---
 
 def download(url):
@@ -166,8 +227,11 @@ def download(url):
     # Wtyczka bgutil (PO token) spakowana w .zip — yt-dlp.exe wczytuje wtyczki
     # tylko z pliku .zip lezacego w katalogu wskazanym przez --plugin-dirs.
     plugin_dir = os.path.join(HERE, "ytdlp-plugins")
-    # Skrypt generujacy PO token (tryb "script" providera bgutil).
-    pot_script = os.path.join(HERE, "bgutil-provider", "server", "build", "generate_once.js")
+
+    # Wystartuj lokalny serwer PO token (tryb HTTP). Robimy to przez serwer, a nie
+    # przez tryb "script", bo script odpala zimny proces Node przy kazdym pobraniu
+    # i na wolniejszych komputerach przekraczal sztywny limit 15 s wtyczki (timeout).
+    ensure_pot_server(node_exe)
 
     cmd = [
         *launcher,
@@ -193,10 +257,8 @@ def download(url):
         cmd += ["--js-runtimes", f"node:{node_exe}"]
         log(f"Uzywam Node.js: {node_exe}")
     if os.path.isdir(plugin_dir):
+        # Wtyczka bgutil sama wykryje serwer na http://127.0.0.1:4416 (tryb HTTP).
         cmd += ["--plugin-dirs", plugin_dir]
-    if os.path.exists(pot_script):
-        cmd += ["--extractor-args", f"youtubepot-bgutilscript:script_path={pot_script}"]
-        log(f"PO token przez skrypt: {pot_script}")
     if ffmpeg:
         cmd += ["--ffmpeg-location", os.path.dirname(ffmpeg)]
     cmd.append(url)

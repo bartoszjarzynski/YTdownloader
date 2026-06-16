@@ -100,8 +100,15 @@ wysokości, by pobierać najwyższą dostępną jakość.
   automatycznie: wymusza IPv4 (`--force-ipv4`), używa lokalnego **Node.js** do
   rozwiązywania podpisów oraz wtyczki **bgutil** (folder `ytdlp-plugins` +
   `bgutil-provider`) do generowania tokenów. Wszystko to instaluje instalator —
-  jeśli widzisz ten błąd, uruchom go ponownie. W logu (`host.log`) szukaj wpisu
-  „PO token przez skrypt"; jego brak oznacza, że komponenty się nie doinstalowały.
+  jeśli widzisz ten błąd, uruchom go ponownie.
+- **„generate_once.js … timed out after 15.0 seconds"** — to był błąd starszej
+  wersji, która generowała PO token w trybie „script" (zimny proces Node przy
+  każdym pobraniu, ze sztywnym limitem 15 s — na wolniejszych komputerach nie
+  wyrabiał się). Teraz pomocnik uruchamia **lokalny serwer bgutil** raz w tle
+  (`http://127.0.0.1:4416`) i z niego korzysta — pierwsze pobranie może chwilę
+  potrwać (start serwera), kolejne są szybkie. W logu (`host.log`) zobaczysz
+  „Serwer PO token gotowy". Serwer to mały proces `node.exe` w tle; znika po
+  wylogowaniu/restarcie i wstaje ponownie przy następnym pobraniu.
 - **Brak ffmpeg** — instalator próbuje go pobrać automatycznie. Jeśli się nie
   uda, na macOS zainstaluj `brew install ffmpeg`, na Windows pobierz ffmpeg i
   wrzuć `ffmpeg.exe` do folderu instalacyjnego.
