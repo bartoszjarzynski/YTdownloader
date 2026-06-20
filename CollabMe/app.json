@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "CollabMe",
+    "slug": "collabme",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "collabme",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#6C5CE7"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.collabme.app"
+    },
+    "android": {
+      "package": "com.collabme.app"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
